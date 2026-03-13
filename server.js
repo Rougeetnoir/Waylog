@@ -182,7 +182,7 @@ app.post('/api/extract-flight', async (req, res) => {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
     const result = await model.generateContent([
       {
@@ -216,7 +216,14 @@ app.post('/api/extract-flight', async (req, res) => {
     if (err instanceof SyntaxError) {
       return res.status(422).json({ error: '识别结果解析失败，请尝试更清晰的截图' });
     }
-    res.status(500).json({ error: err.message || '识别失败，请稍后重试' });
+    const msg = err.message || '';
+    if (msg.includes('429') || msg.toLowerCase().includes('quota')) {
+      return res.status(429).json({ error: 'API 免费额度未开通，请去 aistudio.google.com 重新创建 Key（选 "Create API key in new project"），更新 .env 后重启' });
+    }
+    if (msg.includes('403') || msg.toLowerCase().includes('api_key') || msg.toLowerCase().includes('api key')) {
+      return res.status(403).json({ error: 'API Key 无效，请检查 .env 中的 GEMINI_API_KEY' });
+    }
+    res.status(500).json({ error: '识别失败，请稍后重试' });
   }
 });
 
