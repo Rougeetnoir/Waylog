@@ -24,7 +24,7 @@ A minimal, local-first travel planning memo app inspired by the clean aesthetic 
 ## Project Structure
 
 ```
-TripPlanner/
+Waylog/
 ├── server.js           # Express backend · REST API · JSON file storage
 ├── package.json
 ├── data/
@@ -47,8 +47,8 @@ TripPlanner/
 
 ```bash
 # Clone or download the project
-git clone https://github.com/your-username/TripPlanner.git
-cd TripPlanner
+git clone https://github.com/your-username/Waylog.git
+cd Waylog
 
 # Install dependencies (one time only)
 npm install
@@ -63,7 +63,7 @@ node server.js
 You should see:
 
 ```
-✈  TripPlanner 已启动: http://localhost:3000
+✈  Waylog 已启动: http://localhost:3000
 ```
 
 Open your browser and go to **http://localhost:3000**.
@@ -74,10 +74,10 @@ To stop the server, press `Ctrl + C` in the terminal.
 
 ## Daily Usage
 
-Each time you want to use TripPlanner:
+Each time you want to use Waylog:
 
 ```bash
-cd /path/to/TripPlanner
+cd /path/to/Waylog
 node server.js
 ```
 
@@ -87,14 +87,14 @@ Then visit **http://localhost:3000** in any browser. Close the terminal tab or p
 
 ## Optional: Run in the Background with PM2
 
-If you want TripPlanner to start automatically and run persistently:
+If you want Waylog to start automatically and run persistently:
 
 ```bash
 # Install PM2 globally
 npm install -g pm2
 
-# Start TripPlanner as a managed process
-pm2 start server.js --name TripPlanner
+# Start Waylog as a managed process
+pm2 start server.js --name Waylog
 
 # Save the process list and enable startup on boot
 pm2 save
@@ -104,8 +104,8 @@ pm2 startup
 To stop or restart:
 
 ```bash
-pm2 stop TripPlanner
-pm2 restart TripPlanner
+pm2 stop Waylog
+pm2 restart Waylog
 ```
 
 ---

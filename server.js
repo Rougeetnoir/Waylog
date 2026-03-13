@@ -166,5 +166,5 @@ app.delete('/api/trips/:id/activities/:aid', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✈  TripPlanner 已启动: http://localhost:${PORT}`);
+  console.log(`✈  Waylog 已启动: http://localhost:${PORT}`);
 });
