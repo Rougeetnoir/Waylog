@@ -1,8 +1,8 @@
-# ✈ TripPlanner
+# ✈ Waylog
 
 A minimal, local-first travel planning memo app inspired by the clean aesthetic of handcrafted trip itineraries. Built with Node.js + Express, runs entirely on your own machine with no cloud dependency.
 
-![TripPlanner Screenshot](https://placeholder-screenshot)
+![Waylog Screenshot](https://github.com/user-attachments/assets/f5c09e9d-e077-4874-9b19-1f5ede200d1e)
 
 ---
 
