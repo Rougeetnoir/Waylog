@@ -119,6 +119,24 @@ pm2 restart Waylog
 
 ---
 
+## Backup
+
+All your data lives in a single file: `data/trips.json`. To back it up, run this command in the project directory:
+
+```bash
+cp data/trips.json "data/trips.backup-$(date +%Y%m%d-%H%M%S).json"
+```
+
+Each backup gets a timestamp in its name (e.g. `trips.backup-20260313-143633.json`) so older copies are never overwritten. To restore, just copy a backup file back:
+
+```bash
+cp data/trips.backup-20260313-143633.json data/trips.json
+```
+
+> `data/trips.backup-*.json` is excluded from git (see `.gitignore`) so backups stay local.
+
+---
+
 ## Data Format
 
 All data is stored as plain JSON in `data/trips.json`. You can back it up, version it, or edit it manually. Example structure:

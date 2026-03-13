@@ -3,6 +3,7 @@ node_modules/
 
 # Local data (your personal trip data — don't commit to public repos)
 data/trips.json
+data/trips.backup-*.json
 
 # Keep the data directory itself tracked (with a placeholder)
 !data/.gitkeep
