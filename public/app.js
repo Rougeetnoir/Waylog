@@ -440,6 +440,16 @@ function openFlightModal(editId) {
   const existing = editId ? t.flights.find(f => f.id === editId) : null;
   const title = existing ? '编辑航班' : '添加航班';
   const body = `
+    <div class="ocr-section">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <label class="ocr-upload-label" for="fFlightImg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          上传订单截图自动识别
+        </label>
+        <input type="file" id="fFlightImg" accept="image/*" style="display:none" />
+        <span id="fFlightOcrStatus" class="ocr-status" style="font-size:12px;"></span>
+      </div>
+    </div>
     <div class="form-row-2">
       <div>
         <label class="form-label">出发机场 (IATA)</label>
@@ -512,7 +522,61 @@ function openFlightModal(editId) {
     closeModal();
     renderMain();
   });
-  setTimeout(() => document.getElementById('fFlightFrom')?.focus(), 50);
+  setTimeout(() => {
+    document.getElementById('fFlightFrom')?.focus();
+
+    // ── OCR handler ──────────────────────────────────────────────
+    document.getElementById('fFlightImg')?.addEventListener('change', async function () {
+      const file = this.files?.[0];
+      if (!file) return;
+
+      const status = document.getElementById('fFlightOcrStatus');
+      status.className = 'ocr-status loading';
+      status.textContent = '识别中…';
+
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const res = await fetch('/api/extract-flight', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64, mediaType: file.type || 'image/jpeg' }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.ok) throw new Error(json.error || '识别失败');
+
+        const d = json.data;
+        const fill = (id, val) => {
+          if (val == null || val === '') return;
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.value = val;
+          el.classList.remove('field-autofilled');
+          void el.offsetWidth; // reflow to restart animation
+          el.classList.add('field-autofilled');
+        };
+
+        fill('fFlightFrom', d.fromAirport);
+        fill('fFlightTo',   d.toAirport);
+        fill('fFlightNo',   d.flightNo);
+        fill('fFlightDate', d.date);
+        fill('fFlightDep',  d.departureTime);
+        fill('fFlightArr',  d.arrivalTime);
+        fill('fFlightTerminal', d.terminal);
+
+        status.className = 'ocr-status success';
+        status.textContent = '✓ 识别成功，请确认后保存';
+      } catch (err) {
+        status.className = 'ocr-status error';
+        status.textContent = '✗ ' + (err.message || '识别失败，请手动填写');
+      }
+    });
+  }, 50);
 }
 
 /* ── Delete Flight ──────────────────────────────────────────────── */

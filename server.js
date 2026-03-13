@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const PORT = 3000;
@@ -164,6 +166,70 @@ app.delete('/api/trips/:id/activities/:aid', (req, res) => {
   writeData(data);
   res.json({ ok: true });
 });
+
+// ── Flight OCR ─────────────────────────────────────────────────────
+
+app.post('/api/extract-flight', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({
+      error: '未配置 ANTHROPIC_API_KEY，请在 .env 文件中添加后重启服务。',
+    });
+  }
+
+  const { imageBase64, mediaType } = req.body;
+  if (!imageBase64) return res.status(400).json({ error: '未收到图片数据' });
+
+  try {
+    const client = new Anthropic({ apiKey });
+
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mediaType || 'image/jpeg',
+              data: imageBase64,
+            },
+          },
+          {
+            type: 'text',
+            text: `请从这张机票或订单截图中提取航班信息。只返回如下 JSON，不要任何其他文字：
+{
+  "fromAirport": "出发机场 IATA 三字码（如 PVG、SHA）",
+  "toAirport": "到达机场 IATA 三字码（如 NRT、HND）",
+  "flightNo": "航班号（如 MU517、CA821）",
+  "date": "出发日期 YYYY-MM-DD 格式",
+  "departureTime": "出发时间 HH:mm 格式（24小时制）",
+  "arrivalTime": "到达时间 HH:mm 格式（24小时制）",
+  "terminal": "航站楼（如 T1、T2，找不到则填 null）"
+}
+找不到的字段填 null，只返回 JSON。`,
+          },
+        ],
+      }],
+    });
+
+    const raw = response.content.find(b => b.type === 'text')?.text ?? '';
+    // Strip markdown code fences if present
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const data = JSON.parse(cleaned);
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('[extract-flight]', err.message);
+    if (err instanceof SyntaxError) {
+      return res.status(422).json({ error: '识别结果解析失败，请尝试更清晰的截图' });
+    }
+    res.status(500).json({ error: err.message || '识别失败，请稍后重试' });
+  }
+});
+
+// ───────────────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
   console.log(`✈  Waylog 已启动: http://localhost:${PORT}`);

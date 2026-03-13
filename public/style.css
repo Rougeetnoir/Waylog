@@ -685,6 +685,67 @@
   margin: 16px 0;
 }
 
+/* ── OCR Upload ─────────────────────────────────────────────────── */
+.ocr-section {
+  background: var(--bg2);
+  border: 0.5px solid var(--border3);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+
+.ocr-section-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
+}
+
+.ocr-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ocr-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg);
+  border: 0.5px solid var(--border2);
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.ocr-upload-label:hover { background: var(--bg3); border-color: var(--border1); }
+
+.ocr-status {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.ocr-status.loading { color: var(--text3); animation: ocr-pulse 1.2s ease-in-out infinite; }
+.ocr-status.success { color: var(--green-text); }
+.ocr-status.error   { color: #b91c1c; }
+
+@keyframes ocr-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Flash highlight when a field is auto-filled */
+@keyframes field-filled {
+  0%   { background: rgba(29, 158, 117, 0.18); box-shadow: 0 0 0 2px rgba(29,158,117,0.2); }
+  100% { background: transparent; box-shadow: none; }
+}
+.field-autofilled {
+  animation: field-filled 1.2s ease forwards;
+}
+
 /* ── Scroll ─────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
