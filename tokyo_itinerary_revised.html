@@ -1,0 +1,738 @@
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans, sans-serif); }
+.itinerary { padding: 1rem 0; }
+.day-header {
+  display: flex; align-items: center; gap: 12px;
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 8px;
+  border-bottom: 0.5px solid var(--color-border-tertiary, #e5e5e5);
+}
+.day-badge {
+  background: var(--color-background-secondary, #f5f5f5);
+  border: 0.5px solid var(--color-border-secondary, #d4d4d4);
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #555);
+  white-space: nowrap;
+}
+.day-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary, #111); }
+.day-subtitle { font-size: 12px; color: var(--color-text-secondary, #555); margin-top: 1px; }
+
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before {
+  content: '';
+  position: absolute; left: 9px; top: 8px; bottom: 8px;
+  width: 1px;
+  background: var(--color-border-tertiary, #e5e5e5);
+}
+
+.item { position: relative; margin-bottom: 0; }
+.item-dot {
+  position: absolute; left: -23px; top: 6px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--color-background-primary, #fff);
+  border: 1.5px solid var(--color-border-secondary, #d4d4d4);
+}
+.item-dot.highlight { border-color: #1D9E75; background: #E1F5EE; }
+.item-dot.meal { border-color: #BA7517; background: #FAEEDA; }
+.item-dot.note { border-color: #7F77DD; background: #EEEDFE; }
+
+.item-inner { padding: 4px 0 10px 0; }
+.item-time { font-size: 11px; color: var(--color-text-tertiary, #999); font-weight: 500; letter-spacing: 0.3px; }
+.item-name { font-size: 14px; color: var(--color-text-primary, #111); font-weight: 500; line-height: 1.4; }
+.item-desc { font-size: 12px; color: var(--color-text-secondary, #555); line-height: 1.5; margin-top: 2px; }
+
+.transit-item { position: relative; margin-bottom: 0; }
+.transit-inner {
+  margin: 0;
+  padding: 3px 0 3px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.transit-dot {
+  position: absolute; left: -23px; top: 8px;
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  background: var(--color-background-secondary, #f5f5f5);
+  border: 1px solid var(--color-border-tertiary, #e5e5e5);
+}
+.transit-line {
+  font-size: 11px; color: var(--color-text-tertiary, #999);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.transit-tag {
+  background: var(--color-background-secondary, #f5f5f5);
+  border: 0.5px solid var(--color-border-tertiary, #e5e5e5);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: var(--color-text-secondary, #555);
+}
+.transit-walk { color: #1D9E75; font-size: 11px; }
+.pending-badge {
+  display: inline-block;
+  background: #FAEEDA; color: #854F0B;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 10px; font-weight: 500; margin-left: 4px;
+}
+.tip-badge {
+  display: inline-block;
+  background: #EEEDFE; color: #534AB7;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 10px; margin-left: 4px;
+}
+.hotel-badge {
+  display: inline-block;
+  background: #E1F5EE; color: #0F6E56;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 10px; font-weight: 500; margin-left: 4px;
+}
+.filter-bar {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.filter-btn {
+  border: 0.5px solid var(--color-border-secondary, #d4d4d4);
+  background: var(--color-background-primary, #fff);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #555);
+  cursor: pointer;
+}
+.filter-btn.active {
+  background: var(--color-background-secondary, #f5f5f5);
+  color: var(--color-text-primary, #111);
+  border-color: var(--color-border-primary, #aaa);
+}
+.legend {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 1rem; padding: 8px 12px;
+  background: var(--color-background-secondary, #f5f5f5);
+  border-radius: 8px;
+  border: 0.5px solid var(--color-border-tertiary, #e5e5e5);
+}
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--color-text-secondary, #555); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.hotel-info {
+  background: #E1F5EE;
+  border: 0.5px solid #1D9E75;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 1rem;
+  font-size: 12px;
+  color: #0F6E56;
+  line-height: 1.6;
+}
+.hotel-info strong { font-weight: 500; font-size: 13px; }
+</style>
+
+<div class="itinerary">
+
+<div class="hotel-info">
+  <strong>🏨 推荐住宿：Section L Shimbashi West（新桥西）</strong><br>
+  新桥站步行约3分钟。JR山手线 / 京滨东北线 / 银座线 / 都营浅草线 / 百合鸥线——五条线交汇，是全程行程的地理中心。台场/汐留/丰洲方向百合鸥线直发，去羽田约35分钟直达，去秋叶原/东京站5-8分钟，去表参道银座线约10分钟。较 Hamamatsucho 多一条百合鸥线，对 Day 4 台场+teamLab 路线尤为有利。
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn active" onclick="filterDay('all', this)">全部行程</button>
+  <button class="filter-btn" onclick="filterDay('1', this)">Day 1</button>
+  <button class="filter-btn" onclick="filterDay('2', this)">Day 2</button>
+  <button class="filter-btn" onclick="filterDay('3', this)">Day 3</button>
+  <button class="filter-btn" onclick="filterDay('4', this)">Day 4</button>
+  <button class="filter-btn" onclick="filterDay('5', this)">Day 5</button>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;"></div>景点</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#BA7517;"></div>餐饮</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7F77DD;"></div>注意事项</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#888780; border-radius:2px;"></div>交通</div>
+</div>
+
+<div id="allDays">
+
+<!-- ========== DAY 1 ========== -->
+<div class="day-block" data-day="1">
+<div class="day-header">
+  <div>
+    <div class="day-badge">Day 1 · 5月16日（周六）</div>
+  </div>
+  <div>
+    <div class="day-title">抵达东京 · 龟户藤花 · 浅草快闪</div>
+    <div class="day-subtitle">成田机场 → 新桥酒店（避开三社祭高峰，浅草走马观花）</div>
+  </div>
+</div>
+<div class="timeline">
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">13:45</div>
+      <div class="item-name">抵达成田机场 NRT T1</div>
+      <div class="item-desc">通关 → 购 Suica 交通卡（JR东口/西口均可），充值 ¥3000–5000</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR N'EX 成田特急</span>
+        约60分钟 → 新桥站 / ¥3250/人，可提前官网折扣购票（N'EX直达新桥）
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot"></div>
+    <div class="item-inner">
+      <div class="item-time">15:00</div>
+      <div class="item-name">新桥站 · 入住 Section L Shimbashi West</div>
+      <div class="item-desc">放行李，稍作整理。酒店步行约3分钟至新桥站。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 总武线</span>
+        新桥 → 錦糸町（约20分钟）→ 步行或换乘至龟户站
+        <span style="color:var(--color-text-tertiary)">共约25分钟</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">15:45–16:45</div>
+      <div class="item-name">🌸 龟户天神社 · 赏藤花</div>
+      <div class="item-desc">东京第一赏藤胜地，百株紫藤垂挂水面，倒影如瀑。5月中旬可能为花期末尾，提前查官网确认。免费参拜。学问之神菅原道真，寓意极好。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-walk">步行</span>
+        龟户天神社 → 錦糸町站约15分钟 →
+        <span class="transit-tag">地铁 半藏门线</span>
+        → 浅草站，约5分钟 / 2站
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">17:30–18:30</div>
+      <div class="item-name">⛩ 浅草寺快闪 · 雷门 · 仲见世通</div>
+      <div class="item-desc">
+        <span style="color:#A32D2D;font-weight:500;">⚠ 三社祭（5/15-17）期间浅草人流极多，神輿巡行占道。</span>
+        快闪策略：雷门大灯笼拍照留念，仲见世通商店街扫货御守纪念品即可。本堂外围参拜，无需久留。傍晚人稍少但仍热闹，控制在1小时内。
+      </div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">地铁 银座线</span>
+        浅草 → 新桥，约20分钟 / 7站 / Suica刷卡
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">19:30–21:00</div>
+      <div class="item-name">🍶 新桥居酒屋晚餐</div>
+      <div class="item-desc">新桥是东京最地道的上班族居酒屋聚集地（サラリーマンの街），烤串+生啤+下酒菜，人均 ¥1500–2500。推荐：新桥烧鸟小巷（新橋ガード下）步行即达，无需预约，地道实惠。</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ========== DAY 2 ========== -->
+<div class="day-block" data-day="2">
+<div class="day-header">
+  <div class="day-badge">Day 2 · 5月17日（周日）</div>
+  <div>
+    <div class="day-title">皇居晨跑 · 神田明神 · 秋叶原 · KITTE · 筑地</div>
+    <div class="day-subtitle">Alex晨跑 + Chase咖啡，然后汇合 / 三社祭最后一天避开浅草</div>
+  </div>
+</div>
+<div class="timeline">
+
+  <div class="item">
+    <div class="item-dot note"></div>
+    <div class="item-inner">
+      <div class="item-time">注意</div>
+      <div class="item-name">今日三社祭压轴（5/17周日），浅草全日回避</div>
+      <div class="item-desc">三社祭神輿巡行今日为最高潮，浅草站周边人流爆满，不安排浅草行程。待5/18（周一）三社祭结束后，可选择补逛或不逛。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 山手线</span>
+        新桥 → 有乐町 / 东京方向，步行至竹桥（约20分钟）或乘地铁东西线
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">07:00–08:30</div>
+      <div class="item-name">🏃 Alex：皇居5km晨跑</div>
+      <div class="item-desc">新桥站步行约20分钟到皇居，或乘地铁至竹桥站。Raffine Neo Running Style可存包/赛后冲澡（需提前预约）。皇居外周一圈约5km，5月新绿最美。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">07:00–08:30</div>
+      <div class="item-name">☕ Chase：大手町咖啡</div>
+      <div class="item-desc">竹桥/大手町附近：% Arabica（大手町店）或 Blue Bottle，步行可达。晨报+咖啡，等Alex跑完。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-walk">步行</span>
+        大手町 → 神田明神，约25分钟（途经秋叶原方向）/ 或坐
+        <span class="transit-tag">地铁 千代田线</span>
+        新御茶水站下车，步行5分钟
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">09:00–10:00</div>
+      <div class="item-name">⛩ 神田明神（神田神社）</div>
+      <div class="item-desc">建于公元730年，江户总镇守。朱红色本殿庄严华丽，免费参观。《Love Live!》《命运石之门》官方动漫圣地。Chase的圣地打卡。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-walk">步行</span>
+        神田明神 → 秋叶原，约7分钟
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">10:00–11:30</div>
+      <div class="item-name">🎮 秋叶原闲逛</div>
+      <div class="item-desc">动漫周边/扭蛋/模型。推荐：Yodobashi Akiba（综合大卖场），秋叶原UDX附近小店。Chase的天堂，建议给他设个预算上限😂</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">11:30–12:30</div>
+      <div class="item-name">🍜 午餐：秋叶原拉面/定食</div>
+      <div class="item-desc">秋叶原站附近有大量选择，人均 ¥800–1500。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 山手线/京叶线</span>
+        秋叶原 → 东京站，约5分钟 / 2站
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">13:00–15:30</div>
+      <div class="item-name">🏛 东京站 KITTE + 丸之内</div>
+      <div class="item-desc">KITTE（旧东京中央邮便局，JPタワー）：日本本土品牌/文创/精品食品，顶楼露台可免费俯瞰东京站全景。丸之内附近咖啡/芭菲下午茶。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 山手线</span>
+        东京 → 新桥，约4分钟 / 1站
+        <span class="transit-walk">+ 步行5分钟</span>
+        至筑地场外市场
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">18:00–20:00</div>
+      <div class="item-name">🐟 晚餐：筑地场外市场 / 银座回转寿司</div>
+      <div class="item-desc">筑地场外仍热闹，海鲜丼/烤扇贝/玉子烧。新桥酒店步行约10分钟即达。或回银座坐回转寿司，轻松无需预约。</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ========== DAY 3 ========== -->
+<div class="day-block" data-day="3">
+<div class="day-header">
+  <div class="day-badge">Day 3 · 5月18日（周一）</div>
+  <div>
+    <div class="day-title">中野 · 高円寺古着 · 吉卜力 · 吉祥寺</div>
+    <div class="day-subtitle">古着购物日 + 吉祥寺散步（三社祭今日结束，浅草可选补逛）</div>
+  </div>
+</div>
+<div class="timeline">
+
+  <div class="item">
+    <div class="item-dot note"></div>
+    <div class="item-inner">
+      <div class="item-time">注意</div>
+      <div class="item-name">吉卜力美术馆：需提前抢票</div>
+      <div class="item-desc">官网 l-tike.com 英文界面，¥1000/人。周二休馆，周一开放。如已购票可加入上午行程（10:00场）。<span class="pending-badge">待预约</span></div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 山手线</span>
+        新桥 → 秋叶原 → 换
+        <span class="transit-tag">JR 总武线</span>
+        → 中野，约30分钟
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">10:00–11:30</div>
+      <div class="item-name">🛍 中野百老汇</div>
+      <div class="item-desc">中野站北口步行5分钟。动漫周边/二手模型/古着。周一部分小店关门，但主要店铺开着。Chase的二手动漫周边天堂。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 中央总武线</span>
+        中野 → 高円寺，约3分钟 / 1站
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">11:30–14:00</div>
+      <div class="item-name">👗 高円寺古着街（重点！）</div>
+      <div class="item-desc">东京最佳古着区域。纯情商店街 + 高円寺Look 商店街一带，集中大量日系vintage小店。Theory/Burberry级别二手单品，价格远低于原价。午餐可在附近小食堂解决（¥800–1200）。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 中央线</span>
+        高円寺 → 吉祥寺，约10分钟 / 3站（如去吉卜力则在三鹰下车）
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">14:00–15:00（可选）</div>
+      <div class="item-name">🏰 吉卜力美术馆（如已购票）</div>
+      <div class="item-desc">三鹰站南口乘龙猫主题黄色巴士，约6分钟。馆内约1.5小时。禁止拍照。如未购票跳过此项，直接去吉祥寺。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">15:00–17:30</div>
+      <div class="item-name">🌿 吉祥寺 · 井之头公园</div>
+      <div class="item-desc">吉祥寺站步行5分钟到公园入口。5月新绿最美，可租船（¥700/30分钟）。公园周边商店街找芭菲/软冰淇淋。吉祥寺本町一带也有精选古着小店可继续逛。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">JR 中央线</span>
+        吉祥寺 → 新宿 → 换
+        <span class="transit-tag">JR 山手线</span>
+        → 新桥，总约40分钟
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">19:00–21:00</div>
+      <div class="item-name">🥩 晚餐：炸猪排 / 和牛烤肉</div>
+      <div class="item-desc">新桥周边选一家炸猪排店或平价烤肉店。新桥银座一带选择丰富，人均 ¥2000–3500。</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ========== DAY 4 ========== -->
+<div class="day-block" data-day="4">
+<div class="day-header">
+  <div class="day-badge">Day 4 · 5月19日（周二）</div>
+  <div>
+    <div class="day-title">表参道 · 日枝神社 · 台场高达 · teamLab</div>
+    <div class="day-subtitle">购物 + 神社 + 动漫圣地 + 沉浸艺术（新桥出发极顺畅）</div>
+  </div>
+</div>
+<div class="timeline">
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">地铁 银座线</span>
+        新桥 → 表参道，约10分钟 / 4站
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">10:00–12:00</div>
+      <div class="item-name">🛍 表参道：Onitsuka Tiger + 户外品牌</div>
+      <div class="item-desc">Onitsuka Tiger 黄色系概念旗舰店（表参道4-24-14，2025年4月新开）。附近找 Keen 等户外品牌门店。逛完表参道主街。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">12:00–13:00</div>
+      <div class="item-name">🍱 午餐：表参道附近</div>
+      <div class="item-desc">和食定食 / 拉面。表参道站周边选择丰富，人均 ¥1200–2000。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">地铁 千代田线</span>
+        表参道 → 赤坂，约7分钟 / 3站
+        <span class="transit-walk">+ 步行5分钟上坡</span>
+        至日枝神社
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">13:15–14:00</div>
+      <div class="item-name">⛩ 日枝神社（赤坂）</div>
+      <div class="item-desc">东京最美鸟居神社之一，有千本鸟居（稻荷鸟居走廊）。主祭山王神，保佑事业/缘分。免费参观。爬上去有市区远眺。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">地铁 银座线</span>
+        赤坂见附 → 新桥，约8分钟
+        → 换
+        <span class="transit-tag">百合鸥线 Yurikamome（新桥站直发）</span>
+        新桥 → 台场，约17分钟 / 8站
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot note"></div>
+    <div class="item-inner">
+      <div class="item-time">交通优势</div>
+      <div class="item-name">百合鸥线起点即新桥站——酒店就在旁边</div>
+      <div class="item-desc">住 Shimbashi West 最大红利：百合鸥线（Yurikamome）起点就是新桥站，步行即达，无需换乘。去台场比任何其他地段都方便。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">14:30–15:30</div>
+      <div class="item-name">🤖 台场：独角兽高达 RX-0</div>
+      <div class="item-desc">台场城东京（DiverCity）门口，青海站步行5分钟。赶上15:00变身表演：装甲展开，红色精神感应框架亮起，配合音效。高达基地东京在同栋楼内（官方最大模型店）。免费观看。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">临海线 Rinkai Line</span>
+        东京电讯站 → 新木场，约10分钟
+        换
+        <span class="transit-tag">有乐町线</span>
+        新木场 → 豊洲，约3分钟 / 1站
+        <span style="color:var(--color-text-tertiary)">（共约20分钟）</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">16:30–19:00</div>
+      <div class="item-name">✨ teamLab Planets TOKYO（豊洲）</div>
+      <div class="item-desc">新豊洲站步行1分钟。16:30场 ¥4800/人（两人 ¥9600，约$64）。赤脚入场，走进水中。游览约2–2.5小时。穿容易卷裤腿的裤子。<span class="pending-badge">需提前预约</span></div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">有乐町线</span>
+        豊洲 → 新桥，约14分钟
+        <span style="color:var(--color-text-tertiary)">或 豊洲附近直接吃晚餐</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">19:30–21:30</div>
+      <div class="item-name">🥩 最后正式晚餐：和牛铁板烧 / 寿司</div>
+      <div class="item-desc">建议提前1–2周预约（Tabelog/OpenTable）。人均 ¥5000–8000。新桥或银座一带选择丰富，步行均可到达。<span class="pending-badge">建议预约</span></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ========== DAY 5 ========== -->
+<div class="day-block" data-day="5">
+<div class="day-header">
+  <div class="day-badge">Day 5 · 5月20日（周三）</div>
+  <div>
+    <div class="day-title">悠闲早午餐 · 银座最后一逛 · 出发羽田</div>
+    <div class="day-subtitle">新桥 → 羽田 HND（都营浅草线直达）</div>
+  </div>
+</div>
+<div class="timeline">
+
+  <div class="item">
+    <div class="item-dot meal"></div>
+    <div class="item-inner">
+      <div class="item-time">09:00–11:00</div>
+      <div class="item-name">🍳 悠闲早午餐 · 新桥/银座</div>
+      <div class="item-desc">新桥或银座附近咖啡店或日式早餐。行李已提前存酒店前台。银座步行约10分钟，有伊东屋文具店可做最后文具购物，或松屋/三越免税退税。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot"></div>
+    <div class="item-inner">
+      <div class="item-time">11:00–12:30</div>
+      <div class="item-name">退房 · 整理行李</div>
+      <div class="item-desc">酒店退房，行李打包完毕。大件行李可提前一天用黑猫宅急便寄到羽田机场（酒店前台协助）。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot note"></div>
+    <div class="item-inner">
+      <div class="item-time">13:00 出发</div>
+      <div class="item-name">⏰ 最迟 13:00 出发去机场</div>
+      <div class="item-desc">国际航班建议出发前3小时到达。JL 2 起飞 16:20，需 13:20 前到达羽田。</div>
+    </div>
+  </div>
+
+  <div class="transit-item">
+    <div class="transit-dot"></div>
+    <div class="transit-inner">
+      <div class="transit-line">
+        <span class="transit-tag">都营浅草线 直达</span>
+        大门站（新桥步行5分钟）→ 羽田机场第3端（国际线），约33分钟，无需换乘
+        <span style="color:var(--color-text-tertiary)">Suica 直接刷卡，约 ¥660</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">13:40 抵达羽田</div>
+      <div class="item-name">✈ 羽田机场国际线</div>
+      <div class="item-desc">办理值机 / 托运。免税店购物（酒/零食/护肤）。离境退税最后机会。</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-dot highlight"></div>
+    <div class="item-inner">
+      <div class="item-time">16:20</div>
+      <div class="item-name">✈ JL 2 羽田 → 旧金山起飞</div>
+      <div class="item-desc">东京之旅圆满结束！</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+function filterDay(day, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.day-block').forEach(block => {
+    if (day === 'all' || block.dataset.day === day) {
+      block.style.display = '';
+    } else {
+      block.style.display = 'none';
+    }
+  });
+}
+</script>

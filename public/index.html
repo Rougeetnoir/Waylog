@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TripPlanner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── Sidebar ────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>✈ TripPlanner</h1>
+      </div>
+      <div class="trip-list" id="tripList"></div>
+      <div class="sidebar-footer">
+        <button class="btn-new-trip" onclick="openTripModal()">+ 新建行程</button>
+      </div>
+    </aside>
+
+    <!-- ── Main ──────────────────────────────────────── -->
+    <main class="main" id="main">
+      <div id="tripView" class="trip-view" style="display:none"></div>
+      <div id="emptyState" class="empty-state">
+        <div style="font-size:32px;margin-bottom:4px">🗺️</div>
+        <p>新建一个行程开始规划吧</p>
+        <button class="btn-primary" onclick="openTripModal()">+ 新建行程</button>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ── Modal Portal ──────────────────────────────── -->
+  <div id="modalPortal"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

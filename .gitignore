@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Local data (your personal trip data — don't commit to public repos)
+data/trips.json
+
+# Keep the data directory itself tracked (with a placeholder)
+!data/.gitkeep
+
+# Claude dev config
+.claude/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment (if added later)
+.env
